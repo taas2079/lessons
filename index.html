@@ -275,9 +275,14 @@
         savedData[index].completed = isChecked;
         if (isChecked) {
             const now = new Date();
-            // تنسيق اليوم والتاريخ باللغة العربية
-            const options = { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' };
-            savedData[index].date = now.toLocaleDateString('ar-SA', options);
+            const options = { 
+                calendar: 'gregory', 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'numeric', 
+                day: 'numeric' 
+            };
+            savedData[index].date = now.toLocaleDateString('ar-SA-u-ca-gregory', options);
         } else {
             savedData[index].date = "";
         }
