@@ -26,20 +26,32 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
+
+        /* الجزء العلوي المثبت: النسب + الأزرار + رأس الجدول */
+        .sticky-top-section {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: #ffffff;
+            padding-top: 8px;
+            padding-bottom: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+        }
+
         /* مؤشر نسبة الإنجاز للفصل الأول والثاني */
         .single-progress-box {
             background: #f8f9fa;
             border: 1px solid #e1e5e8;
             border-radius: 8px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
         }
         .progress-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             flex-wrap: wrap;
         }
         .class-selector-group {
@@ -58,19 +70,19 @@
         .terms-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 14px;
+            gap: 12px;
         }
         .term-card {
             background: #ffffff;
             border: 1px solid #e5e8eb;
             border-radius: 8px;
-            padding: 12px 14px;
+            padding: 10px 14px;
         }
         .term-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-weight: bold;
         }
         .term-title {
@@ -87,12 +99,12 @@
         .progress-count {
             color: #555;
             font-size: 13px;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
             font-weight: 600;
         }
         .progress-bar-bg {
             width: 100%;
-            height: 10px;
+            height: 9px;
             background-color: #e9ecef;
             border-radius: 999px;
             overflow: hidden;
@@ -107,10 +119,11 @@
         .progress-bar-fill.term2 {
             background-color: #2980b9;
         }
+
         .controls {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             gap: 10px;
         }
         button {
@@ -141,10 +154,19 @@
         button.delete-btn:hover {
             background-color: #c0392b;
         }
-        table {
+
+        /* جداول رأس الجدول وبياناته */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 0;
+            table-layout: fixed;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+            table-layout: fixed;
         }
         th, td {
             border: 1px solid #dcdde1;
@@ -172,6 +194,7 @@
             cursor: pointer;
             accent-color: #27ae60;
         }
+
         /* تنسيق الشطب الخطي بالأحمر على كامل السطر */
         tr.completed {
             background-color: #fff5f5;
@@ -198,9 +221,14 @@
             color: #2c3e50;
             min-width: 140px;
         }
+
         @media print {
             .controls, .action-col {
                 display: none !important;
+            }
+            .sticky-top-section {
+                position: static;
+                box-shadow: none;
             }
             body {
                 background: #fff;
@@ -221,54 +249,66 @@
 <div class="container">
     <h1>سجل متابعة إنجاز الدروس</h1>
 
-    <div class="single-progress-box">
-        <div class="progress-top-row">
-            <div class="class-selector-group">
-                <label for="selectedClassProgress">إنجاز الفصل:</label>
-                <select id="selectedClassProgress" onchange="renderSingleClassProgress()"></select>
+    <div class="sticky-top-section">
+        <div class="single-progress-box">
+            <div class="progress-top-row">
+                <div class="class-selector-group">
+                    <label for="selectedClassProgress">إنجاز الفصل:</label>
+                    <select id="selectedClassProgress" onchange="renderSingleClassProgress()"></select>
+                </div>
+            </div>
+
+            <div class="terms-grid">
+                <div class="term-card">
+                    <div class="term-header">
+                        <span class="term-title">الفصل الأول</span>
+                        <span id="term1Percent" class="progress-percent">0%</span>
+                    </div>
+                    <div id="term1Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
+                    <div class="progress-bar-bg">
+                        <div id="term1Bar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="term-card">
+                    <div class="term-header">
+                        <span class="term-title">الفصل الثاني</span>
+                        <span id="term2Percent" class="progress-percent term2">0%</span>
+                    </div>
+                    <div id="term2Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
+                    <div class="progress-bar-bg">
+                        <div id="term2Bar" class="progress-bar-fill term2"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="terms-grid">
-            <div class="term-card">
-                <div class="term-header">
-                    <span class="term-title">الفصل الأول</span>
-                    <span id="term1Percent" class="progress-percent">0%</span>
-                </div>
-                <div id="term1Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
-                <div class="progress-bar-bg">
-                    <div id="term1Bar" class="progress-bar-fill"></div>
-                </div>
-            </div>
-
-            <div class="term-card">
-                <div class="term-header">
-                    <span class="term-title">الفصل الثاني</span>
-                    <span id="term2Percent" class="progress-percent term2">0%</span>
-                </div>
-                <div id="term2Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
-                <div class="progress-bar-bg">
-                    <div id="term2Bar" class="progress-bar-fill term2"></div>
-                </div>
-            </div>
+        <div class="controls">
+            <button onclick="addRow()">+ إضافة سطر جديد</button>
+            <button class="print-btn" onclick="window.print()">طباعة الجدول</button>
         </div>
-    </div>
-    
-    <div class="controls">
-        <button onclick="addRow()">+ إضافة سطر جديد</button>
-        <button class="print-btn" onclick="window.print()">طباعة الجدول</button>
+
+        <table class="header-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">الفصل</th>
+                    <th style="width: 45%;">الدرس</th>
+                    <th style="width: 12%;">الإنجاز</th>
+                    <th style="width: 20%;">تاريخ الإنجاز</th>
+                    <th class="action-col" style="width: 8%;">حذف</th>
+                </tr>
+            </thead>
+        </table>
     </div>
 
-    <table id="lessonsTable">
-        <thead>
-            <tr>
-                <th style="width: 15%;">الفصل</th>
-                <th style="width: 45%;">الدرس</th>
-                <th style="width: 12%;">الإنجاز</th>
-                <th style="width: 20%;">تاريخ الإنجاز</th>
-                <th class="action-col" style="width: 8%;">حذف</th>
-            </tr>
-        </thead>
+    <table id="lessonsTable" class="data-table">
+        <colgroup>
+            <col style="width: 15%;">
+            <col style="width: 45%;">
+            <col style="width: 12%;">
+            <col style="width: 20%;">
+            <col class="action-col" style="width: 8%;">
+        </colgroup>
         <tbody id="tableBody">
             <!-- الصفوف تضاف هنا تلقائياً -->
         </tbody>
@@ -324,7 +364,6 @@
         .filter(item => !item.startsWith("==="));
     const validLessons = [...firstTermLessons, ...secondTermLessons];
 
-    // جلب البيانات المحفوظة أو البدء بصف واحد افتراضي
     let savedData = JSON.parse(localStorage.getItem('lessonsTrackerData')) || [
         { classVal: classesList[0], lessonVal: firstTermLessons[0], completed: false, date: "" }
     ];
@@ -389,7 +428,6 @@
                 tr.classList.add('completed');
             }
 
-            // 1. خانة الفصل
             const tdClass = document.createElement('td');
             const selectClass = document.createElement('select');
             classesList.forEach(cls => {
@@ -402,14 +440,12 @@
             selectClass.onchange = (e) => updateRow(index, 'classVal', e.target.value, true);
             tdClass.appendChild(selectClass);
 
-            // 2. خانة الدرس
             const tdLesson = document.createElement('td');
             const selectLesson = document.createElement('select');
             lessonsList.forEach(lesson => {
                 const option = document.createElement('option');
                 option.value = lesson;
                 option.textContent = lesson;
-                // تعطيل الفاصل لكي لا يتم اختياره كدرس
                 if (lesson.startsWith("===")) {
                     option.disabled = true;
                 }
@@ -419,7 +455,6 @@
             selectLesson.onchange = (e) => updateRow(index, 'lessonVal', e.target.value, true);
             tdLesson.appendChild(selectLesson);
 
-            // 3. خانة الإنجاز (علامة صح)
             const tdCheck = document.createElement('td');
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -427,12 +462,10 @@
             checkbox.onchange = (e) => toggleComplete(index, e.target.checked);
             tdCheck.appendChild(checkbox);
 
-            // 4. خانة تاريخ الإنجاز
             const tdDate = document.createElement('td');
             tdDate.className = 'date-cell';
             tdDate.textContent = row.date;
 
-            // زر الحذف
             const tdAction = document.createElement('td');
             tdAction.className = 'action-col';
             const delBtn = document.createElement('button');
@@ -501,7 +534,6 @@
         renderTable();
     }
 
-    // تشغيل الجدول عند فتح الصفحة
     renderTable();
 </script>
 
