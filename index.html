@@ -26,6 +26,87 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
+        /* مؤشر نسبة الإنجاز للفصل الأول والثاني */
+        .single-progress-box {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e8;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+        .progress-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .class-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .class-selector-group select {
+            width: auto;
+            min-width: 140px;
+            padding: 6px 10px;
+        }
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .term-card {
+            background: #ffffff;
+            border: 1px solid #e5e8eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .term-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .term-title {
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .progress-percent {
+            color: #27ae60;
+            font-size: 17px;
+        }
+        .progress-percent.term2 {
+            color: #2980b9;
+        }
+        .progress-count {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #27ae60;
+            width: 0%;
+            border-radius: 999px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar-fill.term2 {
+            background-color: #2980b9;
+        }
         .controls {
             display: flex;
             justify-content: space-between;
@@ -129,6 +210,9 @@
                 box-shadow: none;
                 padding: 0;
             }
+            .single-progress-box, .term-card {
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -136,6 +220,39 @@
 
 <div class="container">
     <h1>سجل متابعة إنجاز الدروس</h1>
+
+    <div class="single-progress-box">
+        <div class="progress-top-row">
+            <div class="class-selector-group">
+                <label for="selectedClassProgress">إنجاز الفصل:</label>
+                <select id="selectedClassProgress" onchange="renderSingleClassProgress()"></select>
+            </div>
+        </div>
+
+        <div class="terms-grid">
+            <div class="term-card">
+                <div class="term-header">
+                    <span class="term-title">الفصل الأول</span>
+                    <span id="term1Percent" class="progress-percent">0%</span>
+                </div>
+                <div id="term1Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
+                <div class="progress-bar-bg">
+                    <div id="term1Bar" class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="term-card">
+                <div class="term-header">
+                    <span class="term-title">الفصل الثاني</span>
+                    <span id="term2Percent" class="progress-percent term2">0%</span>
+                </div>
+                <div id="term2Count" class="progress-count">الدروس المنجزة: 0 من 0</div>
+                <div class="progress-bar-bg">
+                    <div id="term2Bar" class="progress-bar-fill term2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <div class="controls">
         <button onclick="addRow()">+ إضافة سطر جديد</button>
@@ -200,12 +317,69 @@
         "الحوار الوطني"
     ];
 
+    const dividerIndex = lessonsList.findIndex(item => item.startsWith("==="));
+    const firstTermLessons = (dividerIndex !== -1 ? lessonsList.slice(0, dividerIndex) : lessonsList)
+        .filter(item => !item.startsWith("==="));
+    const secondTermLessons = (dividerIndex !== -1 ? lessonsList.slice(dividerIndex + 1) : [])
+        .filter(item => !item.startsWith("==="));
+    const validLessons = [...firstTermLessons, ...secondTermLessons];
+
     // جلب البيانات المحفوظة أو البدء بصف واحد افتراضي
     let savedData = JSON.parse(localStorage.getItem('lessonsTrackerData')) || [
-        { classVal: classesList[0], lessonVal: lessonsList[0], completed: false, date: "" }
+        { classVal: classesList[0], lessonVal: firstTermLessons[0], completed: false, date: "" }
     ];
 
+    function populateClassProgressDropdown() {
+        const selector = document.getElementById('selectedClassProgress');
+        const currentValue = selector.value;
+        selector.innerHTML = '';
+
+        classesList.forEach(cls => {
+            const option = document.createElement('option');
+            option.value = cls;
+            option.textContent = cls;
+            selector.appendChild(option);
+        });
+
+        if (currentValue && classesList.includes(currentValue)) {
+            selector.value = currentValue;
+        } else if (classesList.length > 0) {
+            selector.value = classesList[0];
+        }
+    }
+
+    function calculateTermStats(cls, termLessons) {
+        const totalCount = termLessons.length;
+        const completedSet = new Set(
+            savedData
+                .filter(row => row.classVal === cls && row.completed && termLessons.includes(row.lessonVal))
+                .map(row => row.lessonVal)
+        );
+        const completedCount = completedSet.size;
+        const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        return { completedCount, totalCount, percent };
+    }
+
+    function renderSingleClassProgress() {
+        const selector = document.getElementById('selectedClassProgress');
+        const cls = selector.value || classesList[0];
+
+        const term1 = calculateTermStats(cls, firstTermLessons);
+        const term2 = calculateTermStats(cls, secondTermLessons);
+
+        document.getElementById('term1Count').textContent = `الدروس المنجزة: ${term1.completedCount} من ${term1.totalCount}`;
+        document.getElementById('term1Percent').textContent = `${term1.percent}%`;
+        document.getElementById('term1Bar').style.width = `${term1.percent}%`;
+
+        document.getElementById('term2Count').textContent = `الدروس المنجزة: ${term2.completedCount} من ${term2.totalCount}`;
+        document.getElementById('term2Percent').textContent = `${term2.percent}%`;
+        document.getElementById('term2Bar').style.width = `${term2.percent}%`;
+    }
+
     function renderTable() {
+        populateClassProgressDropdown();
+        renderSingleClassProgress();
+
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
@@ -225,7 +399,7 @@
                 if (cls === row.classVal) option.selected = true;
                 selectClass.appendChild(option);
             });
-            selectClass.onchange = (e) => updateRow(index, 'classVal', e.target.value);
+            selectClass.onchange = (e) => updateRow(index, 'classVal', e.target.value, true);
             tdClass.appendChild(selectClass);
 
             // 2. خانة الدرس
@@ -242,7 +416,7 @@
                 if (lesson === row.lessonVal) option.selected = true;
                 selectLesson.appendChild(option);
             });
-            selectLesson.onchange = (e) => updateRow(index, 'lessonVal', e.target.value);
+            selectLesson.onchange = (e) => updateRow(index, 'lessonVal', e.target.value, true);
             tdLesson.appendChild(selectLesson);
 
             // 3. خانة الإنجاز (علامة صح)
@@ -280,16 +454,19 @@
     function addRow() {
         savedData.push({
             classVal: classesList[0],
-            lessonVal: lessonsList[0],
+            lessonVal: validLessons[0],
             completed: false,
             date: ""
         });
         saveAndRender();
     }
 
-    function updateRow(index, key, value) {
+    function updateRow(index, key, value, refreshProgress = false) {
         savedData[index][key] = value;
         saveData();
+        if (refreshProgress) {
+            renderSingleClassProgress();
+        }
     }
 
     function toggleComplete(index, isChecked) {
