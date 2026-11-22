@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="متابعة الدروس" />
+  <title>متابعة الدروس</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif; }
+    body { margin: 0; background: #0f172a; color: #f8fafc; padding: 16px; }
+    .card { background: #1e293b; border-radius: 16px; padding: 16px; margin-bottom: 14px; border: 1px solid #334155; }
+    h1 { margin: 0 0 12px; font-size: 20px; text-align: center; }
+    label { display: block; margin: 10px 0 6px; font-size: 14px; color: #cbd5e1; }
+    select, button { width: 100%; border-radius: 12px; font-size: 16px; padding: 12px; border: none; }
+    select { background: #0f172a; color: #f8fafc; border: 1px solid #475569; }
+    .btn-save { margin-top: 14px; background: #16a34a; color: #fff; font-weight: 700; cursor: pointer; }
+    .btn-save:disabled { opacity: 0.5; }
+    .item { background: #0f172a; border-radius: 12px; padding: 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #334155; }
+    .item.done { background: #2a1215; border-color: #dc2626; }
+    .item.done .title { text-decoration: line-through; color: #f87171; }
+    .title { font-size: 15px; font-weight: 600; }
+    .meta { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    input[type="checkbox"] { width: 24px; height: 24px; accent-color: #dc2626; cursor: pointer; }
+    .status { text-align: center; font-size: 13px; color: #38bdf8; min-height: 20px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>تسجيل إنجاز الدروس</h1>
+    <label for="classSelect">الفصل</label>
+    <select id="classSelect"></select>
+
+    <label for="lessonSelect">الدرس</label>
+    <select id="lessonSelect"></select>
+
+    <button id="saveBtn" class="btn-save" onclick="addCompleted()">تسجيل الإنجاز وشطب السطر</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:700; font-size:16px;">السجل المعتمد</div>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    // ضع هنا رابط تطبيق الويب الناتج من Apps Script
+    const API_URL = "ضع_رابط_تطبيق_الويب_هنا";
+
+    const DEFAULT_CLASSES = ["أول - 1", "أول - 2", "أول - 3", "أول - 4"];
+    const DEFAULT_LESSONS = [
+      "المجموعة الشمسية", "شكل الأرض", "خطوط الطول ودوائر العرض", "حركة الأرض", "سطح الأرض",
+      "الحضارات القديمة", "الحضارة الإسلامية", "العلوم والمعارف في الحضارة الإسلامية",
+      "العمارة والفنون في الحضارة الإسلامية", "الجوانب الاقتصادية في الحضارة الإسلامية",
+      "التخطيط وأهدافه", "تنظيم الوقت", "شبه الجزيرة العربية قبل ظهور الإسلام",
+      "حياة النبي محمد صلى الله عليه وسلم قبل البعثة", "نزول الوحي والدعوة",
+      "هجرة النبي محمد صلى الله عليه وسلم", "غزوات النبي محمد صلى الله عليه وسلم",
+      "شمائل النبي محمد صلى الله عليه وسلم", "حجة الوداع ووفاة النبي محمد صلى الله عليه وسلم"
+    ];
+
+    function populateSelects(classes = DEFAULT_CLASSES, lessons = DEFAULT_LESSONS) {
+      const cSel = document.getElementById("classSelect");
+      const lSel = document.getElementById("lessonSelect");
+      cSel.innerHTML = classes.map(c => `<option value="${c}">${c}</option>`).join("");
+      lSel.innerHTML = lessons.map(l => `<option value="${l}">${l}</option>`).join("");
+    }
+
+    function setStatus(msg) {
+      document.getElementById("status").textContent = msg;
+    }
+
+    async function loadData() {
+      populateSelects();
+      if (!API_URL || API_URL.startsWith("ضع_")) {
+        setStatus("أدخل رابط Apps Script في الكود أولاً.");
+        return;
+      }
+      setStatus("جاري تحميل السجل...");
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (data.ok) {
+          populateSelects(data.classes || DEFAULT_CLASSES, data.lessons || DEFAULT_LESSONS);
+          renderList(data.rows || []);
+          setStatus("");
+        }
+      } catch (e) {
+        setStatus("تعذر الاتصال بالجدول.");
+      }
+    }
+
+    function renderList(rows) {
+      const list = document.getElementById("list");
+      if (!rows.length) {
+        list.innerHTML = `<div class="meta">لا توجد دروس مسجلة بعد.</div>`;
+        return;
+      }
+      list.innerHTML = rows.slice().reverse().map(r => `
+        <div class="item ${r.done ? "done" : ""}">
+          <div>
+            <div class="title">${r.className} — ${r.lessonName}</div>
+            <div class="meta">${r.dateText || "لم يُسجل تاريخ"}</div>
+          </div>
+          <input type="checkbox" ${r.done ? "checked" : ""} onchange="toggleRow(${r.rowNumber}, this.checked)" />
+        </div>
+      `).join("");
+    }
+
+    async function addCompleted() {
+      const btn = document.getElementById("saveBtn");
+      const className = document.getElementById("classSelect").value;
+      const lessonName = document.getElementById("lessonSelect").value;
+      btn.disabled = true;
+      setStatus("جاري الحفظ وتسجيل التاريخ...");
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "addCompleted", className, lessonName })
+        });
+        setTimeout(async () => {
+          await loadData();
+          btn.disabled = false;
+          setStatus("تم التسجيل وشطب السطر بالأحمر.");
+        }, 1200);
+      } catch (e) {
+        btn.disabled = false;
+        setStatus("حدث خطأ أثناء الحفظ.");
+      }
+    }
+
+    async function toggleRow(rowNumber, done) {
+      setStatus("جاري تحديث حالة السطر...");
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "toggleDone", rowNumber, done })
+        });
+        setTimeout(loadData, 1200);
+      } catch (e) {
+        setStatus("تعذر تحديث السطر.");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
